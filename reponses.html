@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Ticketing System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            background: none;
+            font-size: 1rem;
+        }
+
+        .nav-tab.active {
+            background: white;
+            color: #4f46e5;
+            border-bottom: 3px solid #4f46e5;
+        }
+
+        .nav-tab:hover:not(.active) {
+            background: #e2e8f0;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 40px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.4);
+        }
+
+        .ticket {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border: 2px dashed #cbd5e1;
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ticket::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+            transform: rotate(45deg);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .ticket-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 20px;
+            margin: -30px -30px 20px -30px;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .ticket-info {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .attendee-details {
+            text-align: left;
+        }
+
+        .attendee-details h3 {
+            color: #1f2937;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .detail-item {
+            margin-bottom: 8px;
+            color: #6b7280;
+        }
+
+        .detail-item strong {
+            color: #374151;
+        }
+
+        .qr-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .tickets-list {
+            display: grid;
+            gap: 20px;
+        }
+
+        .scanner-container {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        #qr-reader {
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .scan-result {
+            background: #f0fdf4;
+            border: 2px solid #22c55e;
+            color: #15803d;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .scan-result.error {
+            background: #fef2f2;
+            border-color: #ef4444;
+            color: #dc2626;
+        }
+
+        .attendees-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .attendee-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .attendee-card:hover {
+            border-color: #4f46e5;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .attendee-card.checked-in {
+            border-color: #22c55e;
+            background: #f0fdf4;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .status-checked-in {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            border-radius: 8px;
+        }
+
+        .btn-email {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        }
+
+        .btn-whatsapp {
+            background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+        }
+
+        .btn-email:hover {
+            box-shadow: 0 5px 15px rgba(220, 38, 38, 0.4);
+        }
+
+        .btn-whatsapp:hover {
+            box-shadow: 0 5px 15px rgba(22, 163, 74, 0.4);
+        }
+
+        .integration-info {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .integration-info h3 {
+            color: #92400e;
+            margin-bottom: 10px;
+        }
+
+        .integration-info p {
+            color: #78350f;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .ticket-info {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            
+            .nav-tabs {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎫 Event Ticketing System</h1>
+            <p>Register attendees and manage check-ins with QR codes</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('register')">📝 Register</button>
+            <button class="nav-tab" onclick="showTab('tickets')">🎟️ Tickets</button>
+            <button class="nav-tab" onclick="showTab('scanner')">📱 Scanner</button>
+            <button class="nav-tab" onclick="showTab('attendees')">👥 Attendees</button>
+        </div>
+
+        <!-- Registration Tab -->
+        <div id="register" class="tab-content active">
+            <form id="registrationForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">Full Name *</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="phone">Phone Number *</label>
+                        <input type="tel" id="phone" name="phone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="age">Age *</label>
+                        <input type="number" id="age" name="age" min="1" max="120" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="address">Address *</label>
+                    <textarea id="address" name="address" rows="3" required></textarea>
+                </div>
+                
+                <button type="submit" class="btn">
+                    🎫 Generate Ticket
+                </button>
+            </form>
+        </div>
+
+        <!-- Tickets Tab -->
+        <div id="tickets" class="tab-content">
+            <div class="integration-info">
+                <h3>📧 Email & WhatsApp Integration</h3>
+                <p><strong>Gmail:</strong> Clicking "Send Email" will open Gmail with pre-filled ticket information</p>
+                <p><strong>WhatsApp:</strong> Clicking "Send WhatsApp" will open WhatsApp Web/App with ticket details</p>
+                <p><strong>Note:</strong> You'll need to be logged into Gmail and have WhatsApp installed/accessible</p>
+            </div>
+            <div id="ticketsList" class="tickets-list">
+                <p style="text-align: center; color: #6b7280; font-size: 1.1rem;">No tickets generated yet. Register attendees to see their tickets here.</p>
+            </div>
+        </div>
+
+        <!-- Scanner Tab -->
+        <div id="scanner" class="tab-content">
+            <div class="scanner-container">
+                <h2 style="margin-bottom: 20px;">QR Code Scanner</h2>
+                <button id="startScan" class="btn" onclick="startScanning()">
+                    📱 Start Scanning
+                </button>
+                <button id="stopScan" class="btn" onclick="stopScanning()" style="display: none; background: #ef4444;">
+                    ⏹️ Stop Scanning
+                </button>
+                <div id="qr-reader"></div>
+                <div id="scanResult" class="scan-result"></div>
+            </div>
+        </div>
+
+        <!-- Attendees Tab -->
+        <div id="attendees" class="tab-content">
+            <h2 style="margin-bottom: 30px;">Attendee Management</h2>
+            <div id="attendeesList" class="attendees-grid">
+                <p style="text-align: center; color: #6b7280; font-size: 1.1rem; grid-column: 1/-1;">No attendees registered yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let attendees = [];
+        let html5QrCode = null;
+
+        // Load data from localStorage on page load
+        window.onload = function() {
+            const savedAttendees = localStorage.getItem('eventAttendees');
+            if (savedAttendees) {
+                attendees = JSON.parse(savedAttendees);
+                updateTicketsList();
+                updateAttendeesList();
+            }
+        };
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('eventAttendees', JSON.stringify(attendees));
+        }
+
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Form submission
+        document.getElementById('registrationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const attendee = {
+                id: Date.now().toString(),
+                name: formData.get('name'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+                age: formData.get('age'),
+                address: formData.get('address'),
+                checkedIn: false,
+                registeredAt: new Date().toLocaleString()
+            };
+
+            attendees.push(attendee);
+            saveData();
+            
+            // Reset form
+            e.target.reset();
+            
+            // Update displays
+            updateTicketsList();
+            updateAttendeesList();
+            
+            // Show success message
+            alert('✅ Registration successful! Ticket generated with QR code.');
+            
+            // Switch to tickets tab
+            showTab('tickets');
+            document.querySelector('[onclick="showTab(\'tickets\')"]').classList.add('active');
+        });
+
+        // Generate QR code
+        function generateQRCode(attendeeId) {
+            const canvas = document.createElement('canvas');
+            const qrData = JSON.stringify({
+                id: attendeeId,
+                eventId: 'EVENT2025',
+                timestamp: Date.now()
+            });
+            
+            QRCode.toCanvas(canvas, qrData, {
+                width: 150,
+                height: 150,
+                colorDark: '#4f46e5',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            return canvas;
+        }
+
+        // Update tickets list
+        function updateTicketsList() {
+            const ticketsList = document.getElementById('ticketsList');
+            
+            if (attendees.length === 0) {
+                ticketsList.innerHTML = '<p style="text-align: center; color: #6b7280; font-size: 1.1rem;">No tickets generated yet.</p>';
+                return;
+            }
+
+            ticketsList.innerHTML = attendees.map(attendee => `
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <h2>🎫 Event Ticket</h2>
+                        <p>Ticket ID: ${attendee.id}</p>
+                    </div>
+                    <div class="ticket-info">
+                        <div class="attendee-details">
+                            <h3>${attendee.name}</h3>
+                            <div class="detail-item"><strong>Email:</strong> ${attendee.email}</div>
+                            <div class="detail-item"><strong>Phone:</strong> ${attendee.phone}</div>
+                            <div class="detail-item"><strong>Age:</strong> ${attendee.age}</div>
+                            <div class="detail-item"><strong>Address:</strong> ${attendee.address}</div>
+                            <div class="detail-item"><strong>Registered:</strong> ${attendee.registeredAt}</div>
+                            <div class="detail-item">
+                                <span class="status-badge ${attendee.checkedIn ? 'status-checked-in' : 'status-pending'}">
+                                    ${attendee.checkedIn ? '✅ Checked In' : '⏳ Pending Check-in'}
+                                </span>
+                            </div>
+                            <div class="action-buttons">
+                                <button class="btn btn-small btn-email" onclick="sendEmailTicket('${attendee.id}')">
+                                    📧 Send Email
+                                </button>
+                                <button class="btn btn-small btn-whatsapp" onclick="sendWhatsAppTicket('${attendee.id}')">
+                                    📱 Send WhatsApp
+                                </button>
+                            </div>
+                        </div>
+                        <div class="qr-container" id="qr-${attendee.id}">
+                            <p style="margin-bottom: 10px; font-weight: 600;">Scan to Check-in</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Generate QR codes for each ticket
+            attendees.forEach(attendee => {
+                const qrContainer = document.getElementById(`qr-${attendee.id}`);
+                const canvas = generateQRCode(attendee.id);
+                qrContainer.appendChild(canvas);
+            });
+        }
+
+        // Update attendees list
+        function updateAttendeesList() {
+            const attendeesList = document.getElementById('attendeesList');
+            
+            if (attendees.length === 0) {
+                attendeesList.innerHTML = '<p style="text-align: center; color: #6b7280; font-size: 1.1rem; grid-column: 1/-1;">No attendees registered yet.</p>';
+                return;
+            }
+
+            attendeesList.innerHTML = attendees.map(attendee => `
+                <div class="attendee-card ${attendee.checkedIn ? 'checked-in' : ''}">
+                    <h3 style="margin-bottom: 15px; color: #1f2937;">${attendee.name}</h3>
+                    <div class="detail-item"><strong>Email:</strong> ${attendee.email}</div>
+                    <div class="detail-item"><strong>Phone:</strong> ${attendee.phone}</div>
+                    <div class="detail-item"><strong>Age:</strong> ${attendee.age}</div>
+                    <div class="detail-item" style="margin-bottom: 15px;"><strong>ID:</strong> ${attendee.id}</div>
+                    <span class="status-badge ${attendee.checkedIn ? 'status-checked-in' : 'status-pending'}">
+                        ${attendee.checkedIn ? '✅ Checked In' : '⏳ Pending'}
+                    </span>
+                    ${attendee.checkedIn ? `<div style="margin-top: 10px; font-size: 0.9rem; color: #6b7280;">Checked in: ${attendee.checkedInAt}</div>` : ''}
+                    <div class="action-buttons">
+                        <button class="btn btn-small btn-email" onclick="sendEmailTicket('${attendee.id}')">
+                            📧 Email
+                        </button>
+                        <button class="btn btn-small btn-whatsapp" onclick="sendWhatsAppTicket('${attendee.id}')">
+                            📱 WhatsApp
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Scanner functions
+        function startScanning() {
+            html5QrCode = new Html5Qrcode("qr-reader");
+            
+            Html5Qrcode.getCameras().then(devices => {
+                if (devices && devices.length) {
+                    const cameraId = devices[0].id;
+                    
+                    html5QrCode.start(
+                        cameraId,
+                        {
+                            fps: 10,
+                            qrbox: { width: 250, height: 250 }
+                        },
+                        (decodedText, decodedResult) => {
+                            processQRCode(decodedText);
+                        },
+                        (errorMessage) => {
+                            // Handle scan errors silently
+                        }
+                    ).catch(err => {
+                        showScanResult('Camera access denied or not available', true);
+                    });
+                    
+                    document.getElementById('startScan').style.display = 'none';
+                    document.getElementById('stopScan').style.display = 'inline-flex';
+                }
+            }).catch(err => {
+                showScanResult('No cameras found', true);
+            });
+        }
+
+        function stopScanning() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                    document.getElementById('startScan').style.display = 'inline-flex';
+                    document.getElementById('stopScan').style.display = 'none';
+                    document.getElementById('scanResult').style.display = 'none';
+                });
+            }
+        }
+
+        function processQRCode(qrData) {
+            try {
+                const data = JSON.parse(qrData);
+                const attendeeId = data.id;
+                
+                const attendee = attendees.find(a => a.id === attendeeId);
+                
+                if (attendee) {
+                    if (attendee.checkedIn) {
+                        showScanResult(`⚠️ ${attendee.name} is already checked in!`, true);
+                    } else {
+                        attendee.checkedIn = true;
+                        attendee.checkedInAt = new Date().toLocaleString();
+                        saveData();
+                        updateTicketsList();
+                        updateAttendeesList();
+                        showScanResult(`✅ Successfully checked in: ${attendee.name}`, false);
+                    }
+                } else {
+                    showScanResult('❌ Invalid ticket! Attendee not found.', true);
+                }
+            } catch (e) {
+                showScanResult('❌ Invalid QR code format!', true);
+            }
+        }
+
+        function showScanResult(message, isError) {
+            const resultDiv = document.getElementById('scanResult');
+            resultDiv.textContent = message;
+            resultDiv.className = `scan-result ${isError ? 'error' : ''}`;
+            resultDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // Gmail Integration
+        function sendEmailTicket(attendeeId) {
+            const attendee = attendees.find(a => a.id === attendeeId);
+            if (!attendee) return;
+
+            const subject = encodeURIComponent('🎫 Your Event Ticket - Confirmation');
+            const body = encodeURIComponent(`Dear ${attendee.name},
+
+Thank you for registering for our event! Here are your ticket details:
+
+🎫 TICKET INFORMATION
+━━━━━━━━━━━━━━━━━━━━━━━━
+👤 Name: ${attendee.name}
+📧 Email: ${attendee.email}
+📱 Phone: ${attendee.phone}
+🎂 Age: ${attendee.age}
+🏠 Address: ${attendee.address}
+🆔 Ticket ID: ${attendee.id}
+📅 Registered: ${attendee.registeredAt}
+
+IMPORTANT INSTRUCTIONS:
+━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Please bring this email or show the QR code on your phone
+✅ Arrive 15 minutes early for smooth check-in
+✅ Keep your ticket ID handy: ${attendee.id}
+
+Your QR code will be available in the ticketing system for scanning at the event entrance.
+
+If you have any questions, please reply to this email.
+
+Looking forward to seeing you at the event!
+
+Best regards,
+Event Management Team
+
+---
+This is an automated message from the Event Ticketing System.`);
+
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${attendee.email}&su=${subject}&body=${body}`;
+            window.open(gmailUrl, '_blank');
+        }
+
+        // WhatsApp Integration
+        function sendWhatsAppTicket(attendeeId) {
+            const attendee = attendees.find(a => a.id === attendeeId);
+            if (!attendee) return;
+
+            const message = encodeURIComponent(`🎫 *EVENT TICKET CONFIRMATION*
+
+Hi ${attendee.name}! 👋
+
+Your event registration is confirmed! Here are your ticket details:
+
+📋 *TICKET DETAILS*
+━━━━━━━━━━━━━━━━
+👤 *Name:* ${attendee.name}
+🆔 *Ticket ID:* ${attendee.id}
+📅 *Registered:* ${attendee.registeredAt}
+📱 *Phone:* ${attendee.phone}
+
+🚨 *IMPORTANT REMINDERS:*
+━━━━━━━━━━━━━━━━━━━━━━
+✅ Arrive 15 minutes early
+✅ Keep your Ticket ID ready: *${attendee.id}*
+✅ Your QR code will be scanned at entry
+
+We're excited to see you at the event! 🎉
+
+If you have questions, just reply to this message.
+
+*Event Management Team*`);
+
+            // Try to use phone number if available, otherwise open WhatsApp Web
+            let whatsappUrl;
+            if (attendee.phone) {
+                // Remove any non-numeric characters from phone number
+                const cleanPhone = attendee.phone.replace(/\D/g, '');
+                whatsappUrl = `https://wa.me/${cleanPhone}?text=${message}`;
+            } else {
+                // Open WhatsApp Web without specific number
+                whatsappUrl = `https://web.whatsapp.com/send?text=${message}`;
+            }
+            
+            window.open(whatsappUrl, '_blank');
+        }
+    </script>
+</body>
+</html>
